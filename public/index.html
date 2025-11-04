@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Search Chat - Government Reports</title>
+    <title>Agentic AI Search</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
     <style>
         .chat-container {
             height: calc(100vh - 200px);
@@ -36,10 +38,10 @@
             animation-delay: -0.16s;
         }
         @keyframes bounce {
-            0%, 80%, 100% { 
+            0%, 80%, 100% {
                 transform: scale(0);
             }
-            40% { 
+            40% {
                 transform: scale(1);
             }
         }
@@ -49,21 +51,135 @@
         .source-badge:hover {
             transform: scale(1.05);
         }
+        /* Markdown styling */
+        .markdown-content {
+            line-height: 1.6;
+        }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            font-weight: bold;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        .markdown-content p {
+            margin-bottom: 0.75em;
+        }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.5em;
+            margin-bottom: 0.75em;
+        }
+        .markdown-content li {
+            margin-bottom: 0.25em;
+        }
+        .markdown-content code {
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .markdown-content pre {
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 0.75em;
+        }
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #cbd5e0;
+            padding-left: 1em;
+            margin-left: 0;
+            margin-bottom: 0.75em;
+            color: #4a5568;
+        }
+        .markdown-content a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        .markdown-content strong {
+            font-weight: bold;
+        }
+        .markdown-content em {
+            font-style: italic;
+        }
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 0.75em;
+        }
+        .markdown-content table th,
+        .markdown-content table td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5em;
+            text-align: left;
+        }
+        .markdown-content table th {
+            background-color: rgba(0, 0, 0, 0.05);
+            font-weight: bold;
+        }
+        /* File download links */
+        .file-download-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .file-download-link:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);
+        }
+        /* Collapsible icon rotation */
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
     <div class="container mx-auto max-w-4xl p-4">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-4">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">🔍 AI Search Assistant</h1>
-            <p class="text-gray-600">Search through 1,000 government PDF reports from .gov domains</p>
-            <div class="mt-3 text-sm text-gray-500">
-                <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full mr-2">
-                    📚 Government Reports
-                </span>
-                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                    🤖 AI-Powered
-                </span>
+            <div class="flex items-center justify-between mb-2">
+                <h1 class="text-3xl font-bold text-gray-800">🔍 Agentic AI Search</h1>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <select
+                            id="rag-selector"
+                            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 pr-8 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            title="Select RAG instance"
+                        >
+                            <option value="">Loading RAGs...</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <button
+                        id="new-chat-btn"
+                        class="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                        title="Start a new chat session"
+                    >
+                        🆕 New Chat
+                    </button>
+                </div>
+            </div>
+            <p class="text-gray-600">Intelligent document search powered by agentic AI workflows</p>
+            <div class="mt-3 flex items-center justify-between">
+                <div class="text-sm text-gray-500">
+                    <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full mr-2">
+                        🔍 Semantic Search
+                    </span>
+                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                        🤖 Agentic AI
+                    </span>
+                </div>
+                <div class="text-xs text-gray-400" id="room-info">
+                    Session: <span id="room-id" class="font-mono"></span>
+                </div>
             </div>
         </div>
 
@@ -79,12 +195,10 @@
                         </div>
                         <div class="flex-1">
                             <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-                                <p class="text-gray-800">
-                                    👋 Hello! I'm your AI search assistant. I can help you search through a collection of 1,000 government PDF reports from .gov domains.
-                                </p>
-                                <p class="text-gray-800 mt-2">
-                                    Ask me anything about the reports, and I'll search through them to find relevant information!
-                                </p>
+                                <div class="text-gray-800 markdown-content">
+                                    <p>👋 Hello! I'm your AI search assistant powered by agentic AI search.</p>
+                                    <p>Ask me anything, and I'll autonomously search through the document collection to find relevant information!</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -94,15 +208,15 @@
             <!-- Input Area -->
             <div class="border-t border-gray-200 p-4">
                 <form id="chat-form" class="flex space-x-3">
-                    <input 
-                        type="text" 
-                        id="user-input" 
-                        placeholder="Ask about government reports..." 
+                    <input
+                        type="text"
+                        id="user-input"
+                        placeholder="Ask me anything..."
                         class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         autocomplete="off"
                     >
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         id="send-btn"
                         class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -110,7 +224,7 @@
                     </button>
                 </form>
                 <div class="mt-2 text-xs text-gray-500 text-center">
-                    Powered by Cloudflare Workers AI & AutoRAG
+                    Powered by <a href="https://developers.cloudflare.com/agents/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Agents SDK</a> & <a href="https://developers.cloudflare.com/ai-search/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">AI Search</a>
                 </div>
             </div>
         </div>
@@ -122,31 +236,170 @@
             const $userInput = $('#user-input');
             const $chatForm = $('#chat-form');
             const $sendBtn = $('#send-btn');
-            
+            const $ragSelector = $('#rag-selector');
+
             // WebSocket connection
             let ws = null;
             let currentMessageId = null;
             let currentMessageText = '';
-            
+            let currentRoomId = null;
+            let selectedRag = null;
+
+            // Load available RAGs
+            async function loadRAGs() {
+                try {
+                    const response = await fetch('/api/rags');
+                    const data = await response.json();
+
+                    if (data.success && data.rags && data.rags.length > 0) {
+                        // Clear loading option
+                        $ragSelector.empty();
+
+                        // Add RAG options
+                        data.rags.forEach(rag => {
+                            $ragSelector.append(
+                                $('<option></option>')
+                                    .attr('value', rag.id)
+                                    .text(rag.id)
+                            );
+                        });
+
+                        // Load saved RAG or use first one
+                        const savedRag = localStorage.getItem('selected_rag');
+                        if (savedRag && data.rags.some(r => r.id === savedRag)) {
+                            selectedRag = savedRag;
+                            $ragSelector.val(savedRag);
+                        } else {
+                            selectedRag = data.rags[0].id;
+                            $ragSelector.val(selectedRag);
+                            localStorage.setItem('selected_rag', selectedRag);
+                        }
+
+                        console.log('Loaded RAGs:', data.rags.length, 'Selected:', selectedRag);
+                    } else {
+                        $ragSelector.html('<option value="">No RAGs available</option>');
+                    }
+                } catch (error) {
+                    console.error('Error loading RAGs:', error);
+                    $ragSelector.html('<option value="">Error loading RAGs</option>');
+                }
+            }
+
+            // Handle RAG selection change
+            $ragSelector.on('change', function() {
+                const newRag = $(this).val();
+                if (newRag && newRag !== selectedRag) {
+                    selectedRag = newRag;
+                    localStorage.setItem('selected_rag', selectedRag);
+                    console.log('RAG changed to:', selectedRag);
+
+                    // Create new room and reconnect since RAG context is different
+                    if (ws) {
+                        ws.close();
+                    }
+
+                    // Clear chat UI
+                    $('#chat-messages').empty();
+
+                    // Add welcome message
+                    $('#chat-messages').append(`
+                        <div class="message">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                    AI
+                                </div>
+                                <div class="flex-1">
+                                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
+                                        <div class="text-gray-800 markdown-content">
+                                            <p>👋 Hello! I'm your AI search assistant powered by agentic AI search.</p>
+                                            <p>Ask me anything, and I'll autonomously search through the document collection to find relevant information!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+
+                    // Create new room and reconnect
+                    createNewRoom();
+                    connectWebSocket();
+
+                    // Focus input
+                    $userInput.focus();
+                }
+            });
+
+            // Initialize app - load RAGs first, then connect
+            async function initializeApp() {
+                await loadRAGs();
+                connectWebSocket();
+            }
+
+            // Get or create room ID
+            function getRoomId() {
+                let roomId = localStorage.getItem('chat_room_id');
+                if (!roomId) {
+                    roomId = 'room-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('chat_room_id', roomId);
+                }
+                return roomId;
+            }
+
+            // Create new room
+            function createNewRoom() {
+                const roomId = 'room-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('chat_room_id', roomId);
+                return roomId;
+            }
+
             // Connect to the agent via WebSocket
             function connectWebSocket() {
+                currentRoomId = getRoomId();
+                $('#room-id').text(currentRoomId);
+
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/agents/search-agent/default`;
-                
+                const wsUrl = `${protocol}//${window.location.host}/agents/search-agent/${currentRoomId}`;
+
                 console.log('Connecting to:', wsUrl);
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = () => {
                     console.log('WebSocket connected');
+
+                    // Send selected RAG to agent immediately after connection
+                    if (selectedRag) {
+                        ws.send(JSON.stringify({
+                            selectedRag: selectedRag
+                        }));
+                        console.log('Sent selected RAG to agent:', selectedRag);
+                    }
                 };
-                
+
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
                         console.log('Received:', data);
-                        
+
                         // Handle different message types from the AI SDK data stream
-                        if (data.type === 'search-start') {
+                        if (data.type === 'message-history') {
+                            // Load and display message history
+                            if (data.messages && data.messages.length > 0) {
+                                console.log('Loading message history:', data.messages.length, 'messages');
+                                // Clear welcome message
+                                $('#chat-messages').empty();
+                                // Display each message in history
+                                data.messages.forEach(msg => {
+                                    if (msg.role === 'user') {
+                                        addUserMessage(msg.content);
+                                    } else if (msg.role === 'assistant') {
+                                        addAIMessage(msg.content);
+                                    }
+                                });
+                            }
+                        } else if (data.type === 'query-rewrite') {
+                            // Show query rewrite notification
+                            addQueryRewriteNotification(data.original, data.rewritten);
+                        } else if (data.type === 'search-start') {
                             // Show search query to user
                             addSearchNotification(data.query);
                         } else if (data.type === 'text-delta' || data[0] === 0) {
@@ -168,6 +421,11 @@
                             if (data.result && data.result.found && data.result.results) {
                                 console.log(`Found ${data.result.count} results`);
                             }
+                        } else if (data.type === 'files') {
+                            // Add download links for referenced documents
+                            if (data.files && data.files.length > 0) {
+                                addFileLinks(data.files);
+                            }
                         } else if (data.type === 'finish' || data[0] === 'd') {
                             // Stream finished
                             currentMessageId = null;
@@ -183,21 +441,60 @@
                         console.error('Error parsing message:', e, event.data);
                     }
                 };
-                
+
                 ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
                     addErrorMessage('Connection error. Please refresh the page.');
                 };
-                
+
                 ws.onclose = () => {
                     console.log('WebSocket closed');
                     // Try to reconnect after 3 seconds
                     setTimeout(connectWebSocket, 3000);
                 };
             }
-            
-            // Connect on page load
-            connectWebSocket();
+
+            // Initialize on page load
+            initializeApp();
+
+            // New chat button handler
+            $('#new-chat-btn').on('click', function() {
+                if (confirm('Start a new chat session? Current conversation will be saved in this session.')) {
+                    // Close current WebSocket
+                    if (ws) {
+                        ws.close();
+                    }
+
+                    // Clear chat UI
+                    $('#chat-messages').empty();
+
+                    // Add welcome message
+                    $('#chat-messages').append(`
+                        <div class="message">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                    AI
+                                </div>
+                                <div class="flex-1">
+                                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
+                                        <div class="text-gray-800 markdown-content">
+                                            <p>👋 Hello! I'm your AI search assistant powered by agentic AI search.</p>
+                                            <p>Ask me anything, and I'll autonomously search through the document collection to find relevant information!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+
+                    // Create new room and reconnect
+                    createNewRoom();
+                    connectWebSocket();
+
+                    // Focus input
+                    $userInput.focus();
+                }
+            });
 
             // Auto-scroll to bottom
             function scrollToBottom() {
@@ -256,7 +553,7 @@
             // Add AI message with sources
             function addAIMessage(text, sources = []) {
                 removeTypingIndicator();
-                
+
                 let sourcesHtml = '';
                 if (sources && sources.length > 0) {
                     sourcesHtml = '<div class="mt-3 pt-3 border-t border-blue-200"><p class="text-xs font-semibold text-gray-600 mb-2">📎 Sources:</p><div class="space-y-1">';
@@ -280,7 +577,7 @@
                             </div>
                             <div class="flex-1">
                                 <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-                                    <div class="text-gray-800 whitespace-pre-wrap">${escapeHtml(text)}</div>
+                                    <div class="text-gray-800 markdown-content">${markdownToHtml(text)}</div>
                                     ${sourcesHtml}
                                 </div>
                             </div>
@@ -319,6 +616,14 @@
                 return div.innerHTML;
             }
 
+            // Convert markdown to HTML safely
+            function markdownToHtml(markdown) {
+                // Parse markdown to HTML
+                const rawHtml = marked.parse(markdown);
+                // Sanitize HTML to prevent XSS
+                return DOMPurify.sanitize(rawHtml);
+            }
+
             // Add streaming AI message
             function addStreamingMessage() {
                 removeTypingIndicator();
@@ -331,7 +636,7 @@
                             </div>
                             <div class="flex-1">
                                 <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-                                    <div class="text-gray-800 whitespace-pre-wrap streaming-text"></div>
+                                    <div class="text-gray-800 markdown-content streaming-text"></div>
                                 </div>
                             </div>
                         </div>
@@ -344,7 +649,31 @@
 
             // Update streaming message
             function updateStreamingMessage(messageId, text) {
-                $(`#${messageId} .streaming-text`).text(text);
+                const html = markdownToHtml(text);
+                $(`#${messageId} .streaming-text`).html(html);
+                scrollToBottom();
+            }
+
+            // Add query rewrite notification
+            function addQueryRewriteNotification(original, rewritten) {
+                const notificationHtml = `
+                    <div class="message query-rewrite-notification">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                ✏️
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+                                    <p class="text-xs font-semibold text-blue-700 mb-1">Query rewritten for better search:</p>
+                                    <p class="text-sm text-gray-700 italic">
+                                        "${escapeHtml(rewritten)}"
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $chatMessages.append(notificationHtml);
                 scrollToBottom();
             }
 
@@ -370,13 +699,86 @@
                 scrollToBottom();
             }
 
+            // Extract filename from path
+            function getBasename(path) {
+                return path.split('/').pop() || path;
+            }
+
+            // Add file download links
+            function addFileLinks(files) {
+                const messageId = 'files-' + Date.now();
+                const filesHtml = `
+                    <div class="message">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                                📄
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-2 border border-purple-200">
+                                    <button
+                                        class="w-full flex items-center justify-between text-left text-xs font-semibold text-gray-700 mb-1.5 hover:text-purple-700 transition-colors"
+                                        onclick="toggleFilesList('${messageId}')"
+                                    >
+                                        <span>📎 Referenced Documents (${files.length})</span>
+                                        <svg id="${messageId}-icon" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div id="${messageId}-list" class="space-y-1" style="display: none;">
+                                        ${files.map((file, index) => {
+                                            const basename = getBasename(file.filename);
+                                            const isUrl = file.filename.startsWith('http://') || file.filename.startsWith('https://');
+                                            return `
+                                            <a
+                                                href="${isUrl ? file.filename : `/documents/${encodeURIComponent(file.filename)}`}"
+                                                ${isUrl ? 'target="_blank" rel="noopener noreferrer"' : `download="${escapeHtml(basename)}"`}
+                                                class="file-download-link flex items-center justify-between p-1.5 bg-white border border-purple-200 rounded hover:bg-purple-50 hover:border-purple-300 group"
+                                            >
+                                                <div class="flex items-center space-x-2 flex-1 min-w-0">
+                                                    <span class="flex-shrink-0 w-5 h-5 bg-purple-100 rounded flex items-center justify-center text-purple-600 font-semibold text-xs">
+                                                        ${index + 1}
+                                                    </span>
+                                                    <span class="text-xs text-gray-700 truncate">
+                                                        ${escapeHtml(basename)}
+                                                    </span>
+                                                </div>
+                                                <svg class="w-3.5 h-3.5 text-purple-600 group-hover:text-purple-700 flex-shrink-0 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                            </a>
+                                        `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $chatMessages.append(filesHtml);
+                scrollToBottom();
+            }
+
+            // Toggle files list visibility
+            window.toggleFilesList = function(messageId) {
+                const list = $(`#${messageId}-list`);
+                const icon = $(`#${messageId}-icon`);
+
+                if (list.is(':visible')) {
+                    list.slideUp(200);
+                    icon.removeClass('rotate-180');
+                } else {
+                    list.slideDown(200);
+                    icon.addClass('rotate-180');
+                }
+            };
+
             // Handle form submission via WebSocket
             $chatForm.on('submit', function(e) {
                 e.preventDefault();
-                
+
                 const userMessage = $userInput.val().trim();
                 if (!userMessage) return;
-                
+
                 // Check if WebSocket is connected
                 if (!ws || ws.readyState !== WebSocket.OPEN) {
                     addErrorMessage('Not connected. Please wait a moment and try again.');
@@ -399,7 +801,8 @@
                     ws.send(JSON.stringify({
                         messages: [
                             { role: 'user', content: userMessage }
-                        ]
+                        ],
+                        selectedRag: selectedRag
                     }));
                 } catch (error) {
                     console.error('Error sending message:', error);

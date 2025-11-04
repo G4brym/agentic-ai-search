@@ -3,35 +3,44 @@
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "agentic-ai-search",
-    "main": "src/index.ts",
-	"compatibility_date": "2025-10-29",
-    "compatibility_flags": [
-      "nodejs_compat"
-    ],
-	"assets": {
-		"directory": "./public"
-	},
-	"observability": {
-		"enabled": true
-	},
-    "ai": {
-      "binding": "AI",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agentic-ai-search",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-10-29",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./public"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "gov-public-dataset",
       "remote": true
-    },
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "SearchAgent",
-				"class_name": "SearchAgent"
-			}
-		]
-	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": ["SearchAgent"]
-		}
-	]
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SearchAgent",
+        "class_name": "SearchAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "SearchAgent"
+      ]
+    }
+  ]
 }
