@@ -1,0 +1,22 @@
+{
+	"name": "agentic-ai-search",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20251014.0",
+		"typescript": "^5.9.3",
+		"wrangler": "^4.45.2"
+	},
+	"dependencies": {
+		"@ai-sdk/google": "^2.0.27",
+		"agents": "^0.2.20",
+		"ai": "^5.0.87",
+		"tsc": "^2.0.4",
+		"zod": "^4.1.12"
+	}
+}
